@@ -1,0 +1,38 @@
+services:
+  mc-server:
+    image: itzg/minecraft-server:java17
+    volumes:
+      - ./data:/data
+    networks:
+      - fuma-network
+    ports:
+      - "25565:25565"
+    environment:
+      TZ: "Asia/Shanghai"
+      LANG: "zh_CN.UTF-8"
+      LANGUAGE: "zh_CN.UTF-8"
+      LC_ALL: "zh_CN.UTF-8"
+
+      TYPE: "CUSTOM"
+      CUSTOM_SERVER: "/data/arclight.jar"
+      PACKWIZ_URL: "https://fuma-amane.cii.moe/pack.toml"
+      ENABLE_RCON: true
+      RCON_PASSWORD_FILE: "/run/secrets/rcon_passwd"
+
+      INIT_MEMORY: "2G"
+      MAX_MEMORY: "4G"
+
+      EULA: "true"
+    tty: true
+    stdin_open: true
+    secrets:
+      - rcon_passwd
+    restart: unless-stopped
+
+secrets:
+  rcon_passwd:
+    file: ./secrets/rcon_passwd
+
+networks:
+  fuma-network:
+    external: true

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+lockfile="/tmp/mc-delay-reboot.lock"
+
+if [ -e "$lockfile" ]; then
+    echo "lockfile exist! exit."
+    exit 1
+fi
+
+touch "$lockfile"
+
+cleanup() {
+    rm -f "$lockfile"
+}
+trap cleanup EXIT
+
+commit=$1
+commit_url=$2
+commit_message=$3
+
+send_message() {
+rcon-cli --host mc-server --password `cat /run/secrets/rcon_passwd` <<EOS > /dev/null 2>&1
+tellraw @a ["",{"text":"[!] ","bold":true,"color":"red"},{"text":"远端仓库已更新，即将重启服务器进行同步！","color":"gold"},"\\n","--------------------","\\n",{"text":"[*] ","color":"blue"},{"text":"提交 ID: ","color":"aqua"},{"text":"$commit","underlined":true,"color":"green","clickEvent":{"action":"open_url","value":"$commit_url"}},"\\n",{"text":"[*] ","color":"blue"},{"text":"提交信息: ","color":"aqua"},{"text":"$commit_message","color":"green"},"\\n",{"text":"[*] ","color":"blue"},{"text":"服务器将在 ","color":"gold"},{"text":"$count_down","bold":true,"color":"red"},{"text":" 分钟后重启！","color":"gold"}]
+EOS
+}
+
+send_stop_command() {
+rcon-cli --host mc-server --password `cat /run/secrets/rcon_passwd` <<EOS > /dev/null 2>&1
+tellraw @a ["",{"text":"[!] ","bold":true,"color":"red"},{"text":"正在关闭服务器！","color":"gold"}]
+stop
+EOS
+}
+
+count=0
+max_count=5
+while [ $count -lt $max_count ]; do
+    count_down=$((max_count-count))
+
+    send_message
+    
+    count=$((count + 1))
+    
+    sleep 60
+done
+
+send_stop_command
+
+exit 0
+

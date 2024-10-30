@@ -1,0 +1,28 @@
+services:
+  webhookd:
+    #image: ncarlier/webhookd:latest
+    build: ./
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 8080:8080
+    networks:
+      - fuma-network
+    environment:
+      - WHD_HOOK_SCRIPTS=/scripts
+    #  - debug=true
+      - GITHUB_SECRET_FILE=/run/secrets/webhook_secret
+    secrets:
+      - rcon_passwd
+      - webhook_secret
+    restart: unless-stopped
+
+secrets:
+  rcon_passwd:
+    file: ../secrets/rcon_passwd
+  webhook_secret:
+    file: ../secrets/webhook_secret
+
+networks:
+  fuma-network:
+    external: true
